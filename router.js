@@ -1,13 +1,6 @@
-// method == 'GET'
+var http = require('http');
 
-// case /login : 
-
-// return loginpage
-
-// method == 'POST'
-
-// case /login :
-
-// login(usr,psw);
-
-// ;
+http.createServer(function (req, res) {
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('Hello World!');
+}).listen(8080); 
