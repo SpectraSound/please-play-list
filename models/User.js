@@ -24,10 +24,8 @@ const doQuery = (query) => {
 
 class user {
 
-    constructor(username, password, id){
+    constructor(id){
         this.id = id;
-        this.username = username;
-        this.password = password;
     }
 
     userPlaylists(){

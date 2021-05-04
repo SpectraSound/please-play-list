@@ -2,7 +2,29 @@
     <link rel="stylesheet" href="/views/style.css">
 </head>
 <form action="/login" method="post">
-    <input type="text" placeholder="username">
-    <input type="password" placeholder="password">
+    <input name="username" type="text" placeholder="username">
+    <input name="password" type="password" placeholder="password">
     <button type="submit">login</button>
 </form>
+
+
+<!-- Fetch test -->
+<!-- <script>
+    id="login" onsubmit="login(event)"
+    function login(event) {
+        event.preventDefault();
+        var input = event.target.children;
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Charset': 'utf-8'
+            },
+            body: JSON.stringify({  
+                username: input.username.value,
+                password: input.password.value       
+            })
+        });
+    }
+
+</script> -->
