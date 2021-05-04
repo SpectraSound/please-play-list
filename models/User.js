@@ -1,16 +1,19 @@
-var mysql = require('mysql');
+const mysql = require('mysql');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const db = mysql.createConnection({
-    host: "localhost",
-    database: "engroceries",
-    user: "root",
-    password: ""
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD
 });
 
-const doQuery = (query) => {
+const doQuery = (query,params) => {
     
     return new Promise((resolve,reject)=>{
-        db.query(query,(err,results)=>{
+        db.query(query,params,(err,results)=>{
             if(err){
                 reject(err);
             }  
@@ -22,15 +25,28 @@ const doQuery = (query) => {
     })
 }
 
-class user {
+class User {
 
-    constructor(id){
+    constructor(id, username){
         this.id = id;
+        this.username = username;
+    }
+
+
+    addPlaylist(name, desc, available){
+        return doQuery('INSERT INTO playlists user_id, name, description, public VALUES(?,?,?,?)',[
+            this.id,
+            name,
+            desc,
+            available
+        ])
     }
 
     userPlaylists(){
-        query = 'SELECT * FROM playlists WHERE user_id = ' + this.id;
-
-        return doQuery(query);
+        return doQuery('SELECT * FROM playlists WHERE user_id = ?',[
+            this.id
+        ]);
     }
 }
+
+module.exports = User

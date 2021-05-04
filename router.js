@@ -7,8 +7,7 @@ const port = 8080;
 const host = 'localhost';
 
 const requestListener = function (req, res) {
-   const {url, headers} = req;
-   console.log(headers);
+   const {url} = req;
    
    if(url.includes('.') || url == '/'){
       files.servePage(req,res);

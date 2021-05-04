@@ -1,0 +1,31 @@
+<head>
+    <link rel="stylesheet" href="/views/style.css">
+</head>
+<body>
+
+    <h1>my playlists</h1>
+
+    <div id='playlists'>
+        
+    </div>
+    <div>
+        <a href="/add-playlist">
+            <button>Add new playlist</button>
+        </a>
+    </div>
+    <div>
+        <form action="/logout" method="post">
+            <button type="submit">logout</button>
+        </form>
+    </div>
+</body>
+
+<script>
+ window.onload = function () {
+    fetch('/getPlaylists', {})
+    .then(res => res.json())
+    .then(json =>{
+        console.log(json);
+    })
+ }
+</script>
