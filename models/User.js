@@ -34,7 +34,7 @@ class User {
 
 
     addPlaylist(name, desc, available){
-        return doQuery('INSERT INTO playlists user_id, name, description, public VALUES(?,?,?,?)',[
+        return doQuery('INSERT INTO playlists (user_id, name, description, public) VALUES(?,?,?,?)',[
             this.id,
             name,
             desc,
@@ -46,6 +46,44 @@ class User {
         return doQuery('SELECT * FROM playlists WHERE user_id = ?',[
             this.id
         ]);
+    }
+
+    getPlaylist(playlist_id){
+        return doQuery('SELECT * FROM playlists WHERE user_id = ? AND id = ?',[
+            this.id,
+            playlist_id
+        ]);
+    }
+
+    deletePlaylist(playlist_id){
+        return doQuery('DELETE * FROM playlists WHERE user_id = ? AND id = ?',[
+            this.id,
+            playlist_id
+        ]);
+    }
+
+    updatePlaylist(playlist_id, postData){
+        let params = {}
+
+        doQuery('SELECT * FROM playlists WHERE user_id = ? AND id = ?',[
+            this.id,
+            playlist_id
+        ])
+        .then(results => {
+            params['name'] = postData['name'] ? postData['name']:results[0].name;
+            params['description'] = postData['description'] ? postData['description']:results[0].description
+            params['public'] = postData['public'] ? 1:0
+
+            return doQuery('UPDATE playlists SET name = ?, description = ?, public = ? WHERE id = ?',[
+                params['name'],
+                params['description'],
+                params['public'],
+                playlist_id
+            ]);
+        })
+        .catch(err => {
+            return err;
+        })
     }
 }
 

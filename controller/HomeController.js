@@ -98,10 +98,13 @@ module.exports = {
     endPoints: async function (req, res) {
         const { url, headers, method } = req;
         var cookies = dataHandling.cookie(headers.cookie);
-        let user = new User;
+        var params = dataHandling.params(url);
+        var endpoint = dataHandling.endpoint(url)
+        var prefixGrouping = endpoint.split('/')
+        
         if (cookies == "" || !cookies['token']) {
             if (method == 'GET') {
-                switch (url) {
+                switch (endpoint) {
                     case '/login':
                         html.render('login', res);
                         break;
@@ -114,7 +117,7 @@ module.exports = {
                 }
             }
             if (method == 'POST') {
-                switch (url) {
+                switch (endpoint) {
                     case '/login':
                         let data = await html.data(req);
                         let credentials = dataHandling.form(data);
@@ -125,19 +128,20 @@ module.exports = {
                         ])
                             .then(results => {
                                 user = new User(results[0].id, results[0].username);
-                                console.log(user);
-                                let token = jwt.generateAccessToken(JSON.stringify(user));
+                                let token = process.env.TOKEN_SECRET;
 
-                                res.setHeader('Set-Cookie', 'token=' + token)
-                                res.setHeader('Set-Cookie', 'user_id=' + user.id)
+                                res.writeHead(200,[
+                                    ['Set-Cookie', 'token=' + token],
+                                    ['Set-Cookie', 'user_id=' + user.id],
+                                    ['Set-Cookie', 'username=' + user.username]
+                                ]);
 
-                                console.log('here');
                                 html.render('myPlaylists', res);
 
                             })
                             .catch(err => {
-                                console.log(err)
-                                res.statuscode = 401;
+                                
+                                res.statusCode = 401;
                                 html.render('login', res);
                             });
 
@@ -150,11 +154,10 @@ module.exports = {
                             formData.password
                         ])
                             .then(results => {
-                                console.log(results)
                                 html.render('login', res)
                             })
                             .catch(err => {
-                                res.statuscode = 500;
+                                res.statusCode = 500;
                                 res.end(err);
                             })
                         break;
@@ -166,53 +169,113 @@ module.exports = {
             }
         }
 
-        jwt.authenticateToken(res, cookies['token']);
-
-        if (method == 'GET') {
-            switch (url) {
-                case '/my-playlists':
-                    html.render('myPlaylists', res)
-                    break;
-
-                case '/getPlaylists':
-
-                    break;
-
-                case '/add-playlist':
-                    html.render('newPlaylist', res);
-
-                default:
-                    html.render('myPlaylists', res);
-                    break;
-
-            }
-        }
-
-        if (method == 'POST') {
+        if(cookies['token'] == process.env.TOKEN_SECRET){
             
-            switch(url){
-                case '/logout':
-                    res.setHeader('Set-Cookie', 'token=;expires=' + Date.now());
-                    html.render('login', res);
-                    break;
+            let user = new User(cookies['user_id'],cookies['username']);
 
-                case '/add-playlist':
-                    data = await html.data(req);
-                    let formData = dataHandling.form(data);
-                    
-                    user.addPlaylist(formData.name, formData.description, formData.public ? 1:0)
-                    res.end();
-                    break;
+            if (method == 'GET') {
+                switch (endpoint) {
+                    case '/my-playlists':
+                        html.render('myPlaylists', res)
+                        break;
+    
+                    case '/get-playlists':
+                        user.userPlaylists()
+                        .then(results => {
+                            res.setHeader('Content-Type', 'application/json');
+                            res.end(JSON.stringify(results))
+                        })
+                        .catch(err => {
+                            res.statusCode = 500;
+                            res.end(err);
+                        });
+
+                        break;
+    
+                    case '/add-playlist':
+                        html.render('newPlaylist', res);
+                        break;
+
+                    case '/playlist/show/':
+
+                        if(params['id']){
+                        
+                            user.getPlaylist(params['id'])
+                            .then(results => {
+                                res.setHeader('Content-Type', 'application/json');
+                                res.end(JSON.stringify(results))
+                            })
+                            .catch(err => {
+                                res.statusCode = 500;
+                                res.end(err);
+                            });
+                        
+                        }
+                        break;
+
+                    default:
+                        res.end()
+                        break;
+    
+                }
             }
+    
+            if (method == 'POST') {
+            
+                switch(endpoint){
+                    case '/logout':
+                        res.writeHead(200,[
+                            ['Set-Cookie', 'token=;expires=' + Date.now()],
+                            ['Set-Cookie', 'user_id=;expires=' + Date.now()],
+                            ['Set-Cookie', 'username=;expires=' + Date.now()]
+                        ]);
+                        
+                        html.render('login', res);
+                        break;
+    
+                    case '/add-playlist':
+                        data = await html.data(req);
+                        let formData = dataHandling.form(data);
+                        let user = new User(cookies['user_id'],cookies['username']);
+                        user.addPlaylist(formData.name, formData.description, formData.public ? 1:0)
+                        html.render('myPlaylists', res);
 
-        }
-
-        if (method == 'PUT') {
-
-        }
-
-        if (method == 'DELETE') {
-
+                        break;
+                }
+                html.render('myPlaylists', res); 
+            }
+    
+            if (method == 'PUT') {
+                switch(endpoint){
+                    case '/playlist/update/':
+                        if(params['id']){
+                            data = await html.data(req);
+                            let formData = dataHandling.form(data);
+                            user.updatePlaylist(params['id'],formData)
+                            .then(results =>{
+                                html.render('myPlaylists', res); 
+                            })
+                        }
+                        break;
+                }
+            }
+    
+            if (method == 'DELETE') {
+                switch(endpoint){
+                    case '/playlist/delete/':
+                        user.deletePlaylist(params['id'])
+                        .then(results => {
+                            res.setHeader('Content-Type', 'application/json');
+                            html.render('myPlaylists', res);
+                        })
+                        .catch(err => {
+                            res.statusCode = 500;
+                            res.end(err);
+                        });
+                        
+                        break;
+                }
+            }
         }
     }
 }
